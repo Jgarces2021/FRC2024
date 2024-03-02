@@ -18,7 +18,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 // import org.photonvision.PhotonCamera;
 
@@ -29,17 +31,26 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
  * directory.
  */
 public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
+  private final CANSparkMax m_frontLeft = new CANSparkMax(2, MotorType.kBrushed);
+  private final CANSparkMax m_backLeft = new CANSparkMax(1, MotorType.kBrushed);
+
+  private final CANSparkMax m_frontRight = new CANSparkMax(3, MotorType.kBrushed);
+  private final CANSparkMax m_backRight = new CANSparkMax(4, MotorType.kBrushed);
+
   private final DifferentialDrive m_robotDrive =
-      new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
+      new DifferentialDrive(m_frontLeft::set, m_frontRight::set);
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
   Thread m_visionThread;
   
   public Robot() {
-    SendableRegistry.addChild(m_robotDrive, m_leftDrive);
-    SendableRegistry.addChild(m_robotDrive, m_rightDrive);
+    SendableRegistry.addChild(m_robotDrive, m_frontLeft);
+    SendableRegistry.addChild(m_robotDrive, m_frontRight);
+    SendableRegistry.addChild(m_robotDrive, m_backLeft);
+    SendableRegistry.addChild(m_robotDrive, m_backRight);
+
+    m_backLeft.follow(m_frontLeft);
+    m_backRight.follow(m_frontRight);
   }
 
   /**
@@ -85,13 +96,14 @@ public class Robot extends TimedRobot {
                 outputStream.putFrame(mat);
               }
             });
-    m_visionThread.setDaemon(true);
-    m_visionThread.start();
+    // m_visionThread.setDaemon(true);
+    // m_visionThread.start();
   
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
-    m_rightDrive.setInverted(true);
+    m_frontLeft.setInverted(true);
+    // m_frontRight.setInverted(true);
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -100,14 +112,24 @@ public class Robot extends TimedRobot {
     m_timer.restart();
   }
 
+  private boolean running = false;
+
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
     // Drive for 2 seconds
     if (m_timer.get() < 2.0) {
+      if (!running) {
+        running = true;
+        System.out.println("Turning on motors");
+      }
       // Drive forwards half speed, make sure to turn input squaring off
       m_robotDrive.arcadeDrive(0.5, 0.0, false);
     } else {
+      if (running) {
+        running = false;
+        System.out.println("Turning off motors");
+      }
       m_robotDrive.stopMotor(); // stop robot
     }
   }
@@ -129,5 +151,11 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
+
+  @Override
+  public void disabledPeriodic() {}
+
+  @Override
+  public void robotPeriodic() {}
 }
 
