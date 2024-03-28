@@ -28,26 +28,43 @@ public class Robot extends TimedRobot {
 
   private final CANSparkMax m_frontRight;
   private final CANSparkMax m_backRight;
+
+  private final CANSparkMax m_topIntake;
+  private final CANSparkMax m_bottomIntake;
+
   private final DifferentialDrive m_robotDrive;
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
   private final RobotVision vision;
+  private CANSparkMax m_rightclimber;
+  private CANSparkMax m_leftclimber;
+  private CANSparkMax m_FodeIntake;
 
   public Robot() {
     m_frontLeft = new CANSparkMax(2, MotorType.kBrushed);
     m_backLeft = new CANSparkMax(1, MotorType.kBrushed);
     m_frontRight = new CANSparkMax(3, MotorType.kBrushed);
     m_backRight = new CANSparkMax(4, MotorType.kBrushed);
+
+    this.m_topIntake = new CANSparkMax(6, MotorType.kBrushed);
+    this.m_bottomIntake = new CANSparkMax(5, MotorType.kBrushed);
+
+    this.m_rightclimber = new CANSparkMax(7, MotorType.kBrushed);
+    this.m_leftclimber = new CANSparkMax(8, MotorType.kBrushed);
+
+    this.m_FodeIntake = new CANSparkMax(9, MotorType.kBrushed);
+
     m_backLeft.follow(m_frontLeft);
     m_backRight.follow(m_frontRight);
-
     m_robotDrive = new DifferentialDrive(m_frontLeft::set, m_frontRight::set);
+    m_topIntake.follow(m_bottomIntake);
+
     SendableRegistry.addChild(m_robotDrive, m_frontLeft);
     SendableRegistry.addChild(m_robotDrive, m_frontRight);
     SendableRegistry.addChild(m_robotDrive, m_backLeft);
     SendableRegistry.addChild(m_robotDrive, m_backRight);
-
     vision = new RobotVision();
+
     vision.startThreads();
   }
 
@@ -105,6 +122,47 @@ public class Robot extends TimedRobot {
       -m_controller.getLeftY(),
       -m_controller.getRightX()
     );
+
+    {
+      double rightTrigger = m_controller.getRightTriggerAxis();
+      double leftTrigger = -m_controller.getLeftTriggerAxis();
+      double speed = rightTrigger + leftTrigger;
+      m_bottomIntake.set(1);
+      m_topIntake.set(1);
+    }
+
+    {
+      boolean bumperPressed = m_controller.getLeftBumper();
+      double climberSpeed = 0.5;
+      if (bumperPressed) {
+        climberSpeed = 0.5;
+      } else {
+        climberSpeed = 0;
+      }
+      m_rightclimber.set(climberSpeed);
+    }
+
+    {
+      boolean leftbumperPressed = m_controller.getRightBumper();
+      double leftclimberSpeed = 0.5;
+
+      if (leftbumperPressed) {
+        leftclimberSpeed = 0.5;
+      } else {
+        leftclimberSpeed = 0;
+      }
+      m_leftclimber.set(leftclimberSpeed);
+    }
+
+    boolean aButtomPress = m_controller.getAButton();
+    boolean bButtonPress = !m_controller.getBButton();
+    double Fodespeed = 0;
+    if (aButtomPress && !bButtonPress) {
+      Fodespeed = 0.5;
+    } else if (aButtomPress && !bButtonPress) {
+      Fodespeed = -0.5;
+    }
+    m_FodeIntake.set(Fodespeed);
   }
 
   /** This function is called once each time the robot enters test mode. */
