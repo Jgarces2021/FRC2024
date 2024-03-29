@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import java.util.ArrayList;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -40,14 +41,16 @@ public class Robot extends TimedRobot {
   private CANSparkMax m_leftclimber;
   private CANSparkMax m_FodeIntake;
 
+  private ArrayList<Subsystem> subsystems;
+
   public Robot() {
     m_frontLeft = new CANSparkMax(2, MotorType.kBrushed);
     m_backLeft = new CANSparkMax(1, MotorType.kBrushed);
     m_frontRight = new CANSparkMax(3, MotorType.kBrushed);
     m_backRight = new CANSparkMax(4, MotorType.kBrushed);
 
-    this.m_topIntake = new CANSparkMax(6, MotorType.kBrushed);
-    this.m_bottomIntake = new CANSparkMax(5, MotorType.kBrushed);
+    this.m_topIntake = new CANSparkMax(5, MotorType.kBrushed);
+    this.m_bottomIntake = new CANSparkMax(6, MotorType.kBrushed);
 
     this.m_rightclimber = new CANSparkMax(7, MotorType.kBrushed);
     this.m_leftclimber = new CANSparkMax(8, MotorType.kBrushed);
@@ -57,7 +60,6 @@ public class Robot extends TimedRobot {
     m_backLeft.follow(m_frontLeft);
     m_backRight.follow(m_frontRight);
     m_robotDrive = new DifferentialDrive(m_frontLeft::set, m_frontRight::set);
-    m_topIntake.follow(m_bottomIntake);
 
     SendableRegistry.addChild(m_robotDrive, m_frontLeft);
     SendableRegistry.addChild(m_robotDrive, m_frontRight);
@@ -66,6 +68,9 @@ public class Robot extends TimedRobot {
     vision = new RobotVision();
 
     vision.startThreads();
+
+    this.subsystems = new ArrayList<Subsystem>();
+    this.subsystems.add(new Shooter());
   }
 
   /**
@@ -75,6 +80,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    this.subsystems.forEach(Subsystem::robotInit);
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
@@ -84,27 +90,21 @@ public class Robot extends TimedRobot {
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
+    this.subsystems.forEach(Subsystem::autonomousInit);
+
     m_timer.restart();
   }
-
-  private boolean running = false;
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    this.subsystems.forEach(Subsystem::autonomousPeriodic);
+
     // Drive for 2 seconds
     if (m_timer.get() < 2.0) {
-      if (!running) {
-        running = true;
-        System.out.println("Turning on motors");
-      }
       // Drive forwards half speed, make sure to turn input squaring off
       m_robotDrive.arcadeDrive(0.5, 0.0, false);
     } else {
-      if (running) {
-        running = false;
-        System.out.println("Turning off motors");
-      }
       m_robotDrive.stopMotor(); // stop robot
     }
   }
@@ -113,11 +113,15 @@ public class Robot extends TimedRobot {
    * This function is called once each time the robot enters teleoperated mode.
    */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    this.subsystems.forEach(Subsystem::teleopInit);
+  }
 
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
+    this.subsystems.forEach(Subsystem::teleopPeriodic);
+
     m_robotDrive.arcadeDrive(
       -m_controller.getLeftY(),
       -m_controller.getRightX()
@@ -125,10 +129,34 @@ public class Robot extends TimedRobot {
 
     {
       double rightTrigger = m_controller.getRightTriggerAxis();
-      double leftTrigger = -m_controller.getLeftTriggerAxis();
-      double speed = rightTrigger + leftTrigger;
-      m_bottomIntake.set(1);
-      m_topIntake.set(1);
+      // double leftTrigger = m_controller.getLeftTriggerAxis();
+      // double speed = rightTrigger - leftTrigger;
+
+      if (rightTrigger > 0 || m_topIntake.get() > 0) {
+        m_topIntake.set(rightTrigger);
+        m_bottomIntake.set(rightTrigger);
+      }
+
+      // m_bottomIntake.set(speed);
+      if (m_controller.getRightBumperPressed()) {
+        Thread t = new Thread(() -> {
+          m_topIntake.set(-1.0);
+          try {
+            Thread.sleep(250);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          m_bottomIntake.set(-1.0);
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          m_bottomIntake.set(0);
+          m_topIntake.set(0);
+        });
+        t.start();
+      }
     }
 
     {
@@ -155,9 +183,9 @@ public class Robot extends TimedRobot {
     }
 
     boolean aButtomPress = m_controller.getAButton();
-    boolean bButtonPress = !m_controller.getBButton();
+    boolean bButtonPress = m_controller.getBButton();
     double Fodespeed = 0;
-    if (aButtomPress && !bButtonPress) {
+    if (!aButtomPress && bButtonPress) {
       Fodespeed = 0.5;
     } else if (aButtomPress && !bButtonPress) {
       Fodespeed = -0.5;
@@ -167,15 +195,23 @@ public class Robot extends TimedRobot {
 
   /** This function is called once each time the robot enters test mode. */
   @Override
-  public void testInit() {}
+  public void testInit() {
+    this.subsystems.forEach(Subsystem::testInit);
+  }
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+    this.subsystems.forEach(Subsystem::testPeriodic);
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    this.subsystems.forEach(Subsystem::disabledPeriodic);
+  }
 
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    this.subsystems.forEach(Subsystem::robotPeriodic);
+  }
 }
