@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.subsystems;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
@@ -6,7 +6,6 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.MjpegServer;
 import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.networktables.DoubleEntry;
-import edu.wpi.first.networktables.DoubleTopic;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
@@ -15,7 +14,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-public class RobotVision {
+public class RobotVision extends Subsystem {
 
   private Thread m_visionThread;
   private Thread m_dataThread;

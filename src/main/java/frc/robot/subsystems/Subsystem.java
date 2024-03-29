@@ -1,6 +1,10 @@
-package frc.robot;
+package frc.robot.subsystems;
+
+import edu.wpi.first.wpilibj.XboxController;
 
 public abstract class Subsystem {
+
+  public Subsystem() {}
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -17,10 +21,10 @@ public abstract class Subsystem {
   /**
    * This function is called once each time the robot enters teleoperated mode.
    */
-  public void teleopInit() {}
+  public void teleopInit(XboxController m_controller) {}
 
   /** This function is called periodically during teleoperated mode. */
-  public void teleopPeriodic() {}
+  public void teleopPeriodic(XboxController m_controller) {}
 
   /** This function is called once each time the robot enters test mode. */
   public void testInit() {}
