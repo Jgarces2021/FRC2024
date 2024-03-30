@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.subsystems.Claw;
 import frc.robot.subsystems.Climber;
@@ -25,7 +26,7 @@ import java.util.List;
  * directory.
  */
 public class Robot extends TimedRobot {
-
+  private final Timer m_timer = new Timer();
   private final XboxController m_controller = new XboxController(0);
 
   private List<Subsystem> m_subsystems;
@@ -42,14 +43,12 @@ public class Robot extends TimedRobot {
     m_vision = new RobotVision();
     m_vision.startThreads();
     this.m_shoorter = new Shooter();
-    this.m_subsystems =
-      Arrays.asList(
+    this.m_subsystems = Arrays.asList(
         this.m_claw,
         this.m_climber,
         this.m_drivetrain,
         this.m_vision,
-        this.m_shoorter
-      );
+        this.m_shoorter);
   }
 
   /**
@@ -65,13 +64,19 @@ public class Robot extends TimedRobot {
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
-    this.m_subsystems.forEach(Subsystem::autonomousInit);
+    m_timer.restart();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    this.m_subsystems.forEach(Subsystem::autonomousPeriodic);
+    // Drive for 2 seconds
+    if (m_timer.get() < 2.0) {
+      // Drive forwards half speed, make sure to turn input squaring off
+      m_drivetrain.drive(0.5, 0.0);
+    } else {
+      m_drivetrain.drive(0, 0); // stop robot
+    }
   }
 
   /**
@@ -79,36 +84,45 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopInit() {
-    this.m_subsystems.forEach(subsystem -> subsystem.teleopInit(m_controller));
   }
 
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    this.m_subsystems.forEach(subsystem ->
-        subsystem.teleopPeriodic(m_controller)
-      );
+    // Update the state of the claw
+    boolean aButtomPress = m_controller.getAButton();
+    boolean bButtonPress = m_controller.getBButton();
+    this.m_claw.setEnabled(aButtomPress, bButtonPress);
+
+    // Update the state of the climber
+    this.m_climber.setEnabled(m_controller.getRightBumper());
+
+    // Update the state of the drivetrain
+    this.m_drivetrain.drive(-m_controller.getLeftY(),
+        -m_controller.getRightX());
+
+    // Shooter
+    if (m_controller.getRightBumperPressed()) {
+      m_shoorter.shootAsync();
+    }
+    m_shoorter.setIntakeSpeed(m_controller.getRightTriggerAxis());
   }
 
   /** This function is called once each time the robot enters test mode. */
   @Override
   public void testInit() {
-    this.m_subsystems.forEach(Subsystem::testInit);
   }
 
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
-    this.m_subsystems.forEach(Subsystem::testPeriodic);
   }
 
   @Override
   public void disabledPeriodic() {
-    this.m_subsystems.forEach(Subsystem::disabledPeriodic);
   }
 
   @Override
   public void robotPeriodic() {
-    this.m_subsystems.forEach(Subsystem::robotPeriodic);
   }
 }

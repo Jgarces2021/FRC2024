@@ -1,8 +1,10 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import frc.robot.Constants;
+
 import com.revrobotics.CANSparkMax;
-import edu.wpi.first.wpilibj.XboxController;
 
 public class Shooter extends Subsystem {
 
@@ -11,21 +13,14 @@ public class Shooter extends Subsystem {
   private boolean isShooting;
 
   public Shooter() {
-    this.m_topIntake = new CANSparkMax(5, MotorType.kBrushed);
-    this.m_bottomIntake = new CANSparkMax(6, MotorType.kBrushed);
+    this.m_topIntake = new CANSparkMax(Constants.Shooter.SHOOTER_TOP_MOTOR_ID, MotorType.kBrushed);
+    this.m_bottomIntake = new CANSparkMax(Constants.Shooter.SHOOTER_BOTTOM_MOTOR_ID, MotorType.kBrushed);
   }
 
-  @Override
-  public void teleopPeriodic(XboxController m_controller) {
-    double rightTrigger = m_controller.getRightTriggerAxis();
-
-    if (m_controller.getRightBumperPressed()) {
-      this.shootAsync();
-    }
-
+  public void setIntakeSpeed(double speed) {
     if (!this.isShooting) {
-      m_topIntake.set(rightTrigger);
-      m_bottomIntake.set(rightTrigger);
+      m_topIntake.set(speed);
+      m_bottomIntake.set(speed);
     }
   }
 
@@ -41,7 +36,7 @@ public class Shooter extends Subsystem {
         e.printStackTrace();
       }
     })
-      .start();
+        .start();
   }
 
   private void shoot() throws InterruptedException {
@@ -49,11 +44,11 @@ public class Shooter extends Subsystem {
     m_topIntake.set(-1.0);
     m_bottomIntake.set(0);
 
-    Thread.sleep(500);
+    Thread.sleep(Constants.Shooter.SHOOTER_TOP_MOTOR_SPINUP_TIME);
 
     m_bottomIntake.set(-1.0);
 
-    Thread.sleep(500);
+    Thread.sleep(Constants.Shooter.SHOOTER_RELEASE_TIME);
 
     m_bottomIntake.set(0);
     m_topIntake.set(0);
