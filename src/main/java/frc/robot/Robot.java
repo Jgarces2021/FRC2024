@@ -7,11 +7,11 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.subsystems.Claw;
-import frc.robot.subsystems.Climber;
+// import frc.robot.subsystems.Claw;
+// import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.RobotVision;
-import frc.robot.subsystems.Shooter;
+// import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Subsystem;
 import java.util.Arrays;
 import java.util.List;
@@ -30,25 +30,25 @@ public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
 
   private List<Subsystem> m_subsystems;
-  private final Claw m_claw;
-  private final Climber m_climber;
+  // private final Claw m_claw;
+  // private final Climber m_climber;
   private final Drivetrain m_drivetrain;
   private final RobotVision m_vision;
-  private final Shooter m_shoorter;
 
   public Robot() {
-    this.m_claw = new Claw();
-    this.m_climber = new Climber();
+    // this.m_claw = new Claw();
+    // this.m_climber = new Climber();
     this.m_drivetrain = new Drivetrain();
     m_vision = new RobotVision();
     m_vision.startThreads();
-    this.m_shoorter = new Shooter();
+    // this.m_shoorter = new Shooter();
     this.m_subsystems = Arrays.asList(
-        this.m_claw,
-        this.m_climber,
+        // this.m_claw,
+        // this.m_climber,
         this.m_drivetrain,
-        this.m_vision,
-        this.m_shoorter);
+        this.m_vision
+        // this.m_shoorter
+        );
   }
 
   /**
@@ -92,20 +92,20 @@ public class Robot extends TimedRobot {
     // Update the state of the claw
     boolean aButtomPress = m_controller.getAButton();
     boolean bButtonPress = m_controller.getBButton();
-    this.m_claw.setEnabled(aButtomPress, bButtonPress);
+    // this.m_claw.setEnabled(aButtomPress, bButtonPress);
 
     // Update the state of the climber
-    this.m_climber.setEnabled(m_controller.getRightBumper());
+    // this.m_climber.setEnabled(m_controller.getRightBumper());
 
     // Update the state of the drivetrain
     this.m_drivetrain.drive(-m_controller.getLeftY(),
         -m_controller.getRightX());
 
     // Shooter
-    if (m_controller.getRightBumperPressed()) {
-      m_shoorter.shootAsync();
-    }
-    m_shoorter.setIntakeSpeed(m_controller.getRightTriggerAxis());
+    // if (m_controller.getRightBumperPressed()) {
+    //   m_shoorter.shootAsync();
+    // }
+    // m_shoorter.setIntakeSpeed(m_controller.getRightTriggerAxis());
   }
 
   /** This function is called once each time the robot enters test mode. */
